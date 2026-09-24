@@ -1,0 +1,2439 @@
+
+# Introducción completa al Desarrollo Web de APIs en Python
+
+## 1. ¿Qué significa desarrollar APIs?
+
+Una **API** (*Application Programming Interface*) es una interfaz que permite que dos sistemas se comuniquen.
+
+Por ejemplo:
+
+```text
+Aplicación móvil
+       │
+       │ HTTP
+       ▼
+┌──────────────────┐
+│    API Python    │
+│     FastAPI      │
+└────────┬─────────┘
+         │
+         ▼
+┌──────────────────┐
+│    PostgreSQL    │
+└──────────────────┘
+```
+
+Imagina una aplicación de una biblioteca.
+
+El frontend podría necesitar:
+
+```text
+Ver libros
+Crear usuarios
+Registrar préstamos
+Buscar libros
+Iniciar sesión
+```
+
+En lugar de conectarse directamente a la base de datos, realiza peticiones a una API:
+
+```text
+GET /libros
+POST /usuarios
+POST /login
+POST /prestamos
+```
+
+La API recibe esas peticiones, ejecuta la lógica correspondiente y devuelve normalmente información en **JSON**.
+
+HTTP funciona bajo un modelo cliente-servidor y es la base de gran parte de estas comunicaciones web.
+
+---
+
+# 2. Arquitectura básica de una aplicación moderna
+
+Una aplicación web suele dividirse en tres grandes partes:
+
+```text
+FRONTEND
+React / Vue / Angular / aplicación móvil
+             │
+             │ HTTPS + JSON
+             ▼
+BACKEND / API
+Python + FastAPI
+             │
+             │ SQL
+             ▼
+BASE DE DATOS
+PostgreSQL / MySQL
+```
+
+### Frontend
+
+Es lo que ve el usuario.
+
+Por ejemplo:
+
+```text
+HTML
+CSS
+JavaScript
+React
+Vue
+Aplicaciones Android/iOS
+```
+
+### Backend
+
+Gestiona:
+
+```text
+Usuarios
+Autenticación
+Permisos
+Datos
+Reglas de negocio
+Seguridad
+Procesamiento
+Conexión con bases de datos
+Integraciones externas
+```
+
+Aquí utilizaremos **Python**.
+
+### Base de datos
+
+Almacena información permanentemente.
+
+Por ejemplo:
+
+```text
+usuarios
+productos
+pedidos
+facturas
+mensajes
+sesiones
+```
+
+Una combinación profesional bastante habitual puede ser:
+
+```text
+Frontend → React
+API      → FastAPI
+ORM      → SQLAlchemy
+Database → PostgreSQL
+Tests    → pytest
+Deploy   → Docker
+```
+
+---
+
+# 3. Qué necesitas saber de Python
+
+Antes de desarrollar APIs deberías dominar al menos:
+
+```python
+variables
+strings
+listas
+diccionarios
+condicionales
+bucles
+funciones
+excepciones
+clases
+módulos
+imports
+entornos virtuales
+type hints
+```
+
+Especialmente importantes son los **type hints**.
+
+```python
+def sumar(a: int, b: int) -> int:
+    return a + b
+```
+
+También estructuras como:
+
+```python
+usuarios: list[str] = [
+    "Ana",
+    "Carlos",
+    "Laura"
+]
+```
+
+Los tipos son especialmente importantes con FastAPI porque puede utilizarlos para validación, documentación y análisis automático de las peticiones.
+
+---
+
+# 4. HTTP: el concepto más importante antes de una API
+
+Una API web normalmente recibe **peticiones HTTP**.
+
+Una petición podría verse conceptualmente así:
+
+```http
+GET /usuarios/25 HTTP/1.1
+Host: api.ejemplo.com
+Authorization: Bearer TOKEN
+```
+
+La API podría responder:
+
+```json
+{
+    "id": 25,
+    "nombre": "Manuel",
+    "activo": true
+}
+```
+
+HTTP define métodos con diferentes propósitos.
+
+Los principales son:
+
+| Método | Propósito típico |
+|---|---|
+| GET | Obtener información |
+| POST | Crear información |
+| PUT | Reemplazar completamente |
+| PATCH | Modificar parcialmente |
+| DELETE | Eliminar |
+| OPTIONS | Consultar opciones de comunicación |
+
+Ejemplo:
+
+```text
+GET    /usuarios
+GET    /usuarios/10
+POST   /usuarios
+PATCH  /usuarios/10
+DELETE /usuarios/10
+```
+
+Esto ya comienza a parecerse a una **API REST**.
+
+---
+
+# 5. Códigos HTTP
+
+Las respuestas HTTP contienen códigos de estado.
+
+Se agrupan en cinco familias: `1xx`, `2xx`, `3xx`, `4xx` y `5xx`.
+
+Al desarrollar APIs utilizarás constantemente:
+
+```text
+200 OK
+201 Created
+204 No Content
+
+400 Bad Request
+401 Unauthorized
+403 Forbidden
+404 Not Found
+409 Conflict
+422 Unprocessable Content
+
+500 Internal Server Error
+```
+
+Ejemplo:
+
+```text
+POST /usuarios
+```
+
+Si funciona:
+
+```http
+201 Created
+```
+
+Si intentas obtener un usuario inexistente:
+
+```http
+404 Not Found
+```
+
+Un buen backend no devuelve simplemente:
+
+```json
+{"error": "algo salió mal"}
+```
+
+para absolutamente todos los errores.
+
+Debe utilizar correctamente HTTP.
+
+---
+
+# 6. JSON
+
+Actualmente es uno de los formatos más utilizados para comunicar aplicaciones web.
+
+Ejemplo:
+
+```json
+{
+    "id": 1,
+    "nombre": "Ana",
+    "edad": 24,
+    "activo": true
+}
+```
+
+En Python se parece mucho a un diccionario:
+
+```python
+usuario = {
+    "id": 1,
+    "nombre": "Ana",
+    "edad": 24,
+    "activo": True
+}
+```
+
+Una API convierte continuamente:
+
+```text
+Objetos Python
+      ↓
+     JSON
+      ↓
+   Internet
+      ↓
+JavaScript / móvil / otra API
+```
+
+---
+
+# 7. Frameworks de APIs en Python
+
+Los tres nombres que conviene conocer son:
+
+## FastAPI
+
+Está específicamente muy orientado al desarrollo moderno de APIs.
+
+Utiliza intensivamente:
+
+```text
+Python Type Hints
+Pydantic
+Starlette
+OpenAPI
+ASGI
+async/await
+```
+
+Además genera automáticamente documentación basada en OpenAPI y proporciona Swagger UI en `/docs` y ReDoc en `/redoc`.
+
+Será el framework principal de esta guía.
+
+## Flask
+
+Es un framework web ligero y flexible. Su documentación lo describe como un framework WSGI diseñado para comenzar rápidamente y poder crecer hacia aplicaciones más complejas.
+
+Es excelente para aprender los fundamentos.
+
+## Django + Django REST Framework
+
+Django es mucho más amplio:
+
+```text
+ORM
+usuarios
+autenticación
+administración
+migraciones
+formularios
+templates
+seguridad
+```
+
+Django REST Framework añade herramientas especializadas para crear APIs.
+
+Su quickstart introduce conceptos como:
+
+```text
+Serializers
+ViewSets
+Routers
+Autenticación
+Paginación
+```
+
+
+---
+
+# 8. Primera API con FastAPI
+
+Crea una carpeta:
+
+```text
+mi_api/
+```
+
+Después crea un entorno virtual.
+
+Windows:
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+
+Linux/macOS:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Los entornos virtuales permiten aislar las dependencias de cada proyecto. Flask, por ejemplo, también recomienda trabajar de esta forma.
+
+Instala FastAPI:
+
+```bash
+pip install "fastapi[standard]"
+```
+
+Crea:
+
+```text
+main.py
+```
+
+Código:
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def inicio():
+    return {
+        "mensaje": "Mi primera API"
+    }
+```
+
+Ejecuta:
+
+```bash
+fastapi dev main.py
+```
+
+Visita:
+
+```text
+http://127.0.0.1:8000
+```
+
+Obtendrás:
+
+```json
+{
+    "mensaje": "Mi primera API"
+}
+```
+
+FastAPI utiliza precisamente este modelo de una instancia `FastAPI` y operaciones asociadas a rutas.
+
+---
+
+# 9. Swagger
+
+Visita:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+FastAPI genera una interfaz Swagger automáticamente.
+
+También:
+
+```text
+http://127.0.0.1:8000/redoc
+```
+
+Esto permite probar:
+
+```text
+GET
+POST
+PUT
+PATCH
+DELETE
+```
+
+sin desarrollar todavía un frontend.
+
+---
+
+# 10. Parámetros de ruta
+
+Podemos crear:
+
+```python
+@app.get("/usuarios/{usuario_id}")
+def obtener_usuario(usuario_id: int):
+    return {
+        "id": usuario_id
+    }
+```
+
+Petición:
+
+```text
+GET /usuarios/15
+```
+
+Respuesta:
+
+```json
+{
+    "id": 15
+}
+```
+
+FastAPI sabe que:
+
+```python
+usuario_id: int
+```
+
+debe ser un número entero.
+
+Si alguien introduce algo incompatible, el framework puede rechazar la entrada automáticamente.
+
+---
+
+# 11. Query Parameters
+
+Supongamos:
+
+```text
+GET /productos?categoria=computacion&limite=10
+```
+
+Código:
+
+```python
+@app.get("/productos")
+def productos(
+    categoria: str | None = None,
+    limite: int = 10
+):
+    return {
+        "categoria": categoria,
+        "limite": limite
+    }
+```
+
+Los query parameters son especialmente útiles para:
+
+```text
+Búsquedas
+Filtros
+Ordenamiento
+Paginación
+```
+
+Ejemplo profesional:
+
+```text
+GET /api/v1/productos
+    ?categoria=servidores
+    &page=2
+    &limit=25
+    &sort=precio
+```
+
+---
+
+# 12. Recibir JSON
+
+Para ello podemos definir un modelo.
+
+```python
+from pydantic import BaseModel
+
+
+class UsuarioCrear(BaseModel):
+    nombre: str
+    email: str
+    edad: int
+```
+
+Endpoint:
+
+```python
+@app.post("/usuarios")
+def crear_usuario(usuario: UsuarioCrear):
+    return usuario
+```
+
+Cliente:
+
+```json
+{
+    "nombre": "Ana",
+    "email": "ana@example.com",
+    "edad": 24
+}
+```
+
+FastAPI procesa y valida los datos antes de entregárselos a nuestra función.
+
+Esta separación entre:
+
+```text
+datos externos
+     ↓
+validación
+     ↓
+lógica
+```
+
+es fundamental en APIs profesionales.
+
+---
+
+# 13. CRUD
+
+CRUD significa:
+
+```text
+Create
+Read
+Update
+Delete
+```
+
+Es decir:
+
+```text
+Crear
+Leer
+Actualizar
+Eliminar
+```
+
+Una API CRUD podría tener:
+
+```text
+POST   /usuarios
+GET    /usuarios
+GET    /usuarios/{id}
+PATCH  /usuarios/{id}
+DELETE /usuarios/{id}
+```
+
+---
+
+# 14. Ejemplo CRUD completo básico
+
+```python
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
+
+
+app = FastAPI()
+
+
+class UsuarioCrear(BaseModel):
+    nombre: str = Field(min_length=2, max_length=80)
+    edad: int = Field(ge=0, le=120)
+
+
+class Usuario(UsuarioCrear):
+    id: int
+
+
+usuarios: dict[int, Usuario] = {}
+
+
+@app.get("/usuarios")
+def listar_usuarios():
+    return list(usuarios.values())
+
+
+@app.get("/usuarios/{usuario_id}")
+def obtener_usuario(usuario_id: int):
+
+    usuario = usuarios.get(usuario_id)
+
+    if not usuario:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    return usuario
+
+
+@app.post(
+    "/usuarios",
+    response_model=Usuario,
+    status_code=status.HTTP_201_CREATED
+)
+def crear_usuario(datos: UsuarioCrear):
+
+    usuario_id = len(usuarios) + 1
+
+    usuario = Usuario(
+        id=usuario_id,
+        **datos.model_dump()
+    )
+
+    usuarios[usuario_id] = usuario
+
+    return usuario
+
+
+@app.delete(
+    "/usuarios/{usuario_id}",
+    status_code=status.HTTP_204_NO_CONTENT
+)
+def eliminar_usuario(usuario_id: int):
+
+    if usuario_id not in usuarios:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
+    del usuarios[usuario_id]
+```
+
+Aquí ya aparecen varios conceptos importantes:
+
+```text
+Rutas
+Métodos HTTP
+Modelos
+Validación
+Códigos HTTP
+Errores
+CRUD
+response_model
+```
+
+Pero todavía estamos utilizando memoria RAM.
+
+Al reiniciar el servidor:
+
+```text
+todos los usuarios desaparecen
+```
+
+Necesitamos una base de datos.
+
+---
+
+# 15. Bases de datos
+
+Para empezar puedes utilizar:
+
+```text
+SQLite
+```
+
+Más adelante conviene aprender:
+
+```text
+PostgreSQL
+```
+
+También existen:
+
+```text
+MySQL
+MariaDB
+SQL Server
+MongoDB
+Redis
+```
+
+Para backend profesional con Python, aprender **SQL y PostgreSQL** es especialmente recomendable.
+
+---
+
+# 16. ORM
+
+ORM significa:
+
+**Object Relational Mapper**.
+
+Permite trabajar con tablas mediante objetos Python.
+
+Sin ORM podrías escribir:
+
+```sql
+SELECT * FROM users WHERE id = 5;
+```
+
+Con un ORM conceptualmente puedes hacer algo parecido a:
+
+```python
+usuario = session.get(User, 5)
+```
+
+Uno de los ORMs/ecosistemas SQL principales de Python es:
+
+```text
+SQLAlchemy
+```
+
+Su tutorial oficial cubre tanto SQLAlchemy Core como su ORM y conceptos como conexiones, transacciones, metadatos y consultas.
+
+---
+
+# 17. Modelos de base de datos frente a schemas
+
+Hay una distinción profesional importante.
+
+## Modelo de base de datos
+
+Describe cómo guardas información.
+
+```python
+class User:
+    id
+    email
+    password_hash
+    created_at
+```
+
+## Schema de entrada
+
+Describe lo que permites recibir.
+
+```python
+class UserCreate:
+    email
+    password
+```
+
+## Schema de respuesta
+
+Describe lo que entregas.
+
+```python
+class UserResponse:
+    id
+    email
+    created_at
+```
+
+Nunca deberías devolver:
+
+```text
+password
+password_hash
+secret keys
+tokens privados
+```
+
+por accidente.
+
+---
+
+# 18. Arquitectura profesional
+
+Una API pequeña puede vivir en:
+
+```text
+main.py
+```
+
+Pero una aplicación seria debería dividir responsabilidades.
+
+Ejemplo:
+
+```text
+app/
+│
+├── main.py
+│
+├── api/
+│   └── routes/
+│       ├── users.py
+│       ├── auth.py
+│       └── products.py
+│
+├── core/
+│   ├── config.py
+│   └── security.py
+│
+├── models/
+│   ├── user.py
+│   └── product.py
+│
+├── schemas/
+│   ├── user.py
+│   └── product.py
+│
+├── services/
+│   └── users.py
+│
+├── repositories/
+│   └── users.py
+│
+├── db/
+│   ├── session.py
+│   └── base.py
+│
+└── tests/
+    ├── test_users.py
+    └── test_auth.py
+```
+
+La idea es evitar esto:
+
+```text
+ruta HTTP
++ SQL
++ passwords
++ emails
++ lógica
++ validaciones
++ configuración
+
+todo dentro de una única función.
+```
+
+---
+
+# 19. Router
+
+En lugar de colocar 100 endpoints en `main.py`, puedes separarlos.
+
+Por ejemplo:
+
+```python
+from fastapi import APIRouter
+
+
+router = APIRouter(
+    prefix="/usuarios",
+    tags=["Usuarios"]
+)
+
+
+@router.get("/")
+def usuarios():
+    return []
+```
+
+Posteriormente:
+
+```python
+app.include_router(router)
+```
+
+Esto permite construir una aplicación modular.
+
+---
+
+# 20. Servicios
+
+Una ruta HTTP no debería contener toda la lógica.
+
+En vez de:
+
+```python
+@app.post("/usuarios")
+def crear_usuario():
+    # 80 líneas de código
+```
+
+podemos hacer:
+
+```python
+@app.post("/usuarios")
+def crear_usuario(datos: UsuarioCrear):
+    return usuario_service.crear(datos)
+```
+
+Entonces:
+
+```text
+Controller / Route
+       ↓
+Service
+       ↓
+Repository
+       ↓
+Database
+```
+
+Esta separación mejora:
+
+```text
+mantenimiento
+testing
+reutilización
+legibilidad
+escalabilidad
+```
+
+---
+
+# 21. Variables de entorno
+
+Nunca hagas:
+
+```python
+DATABASE_PASSWORD = "123456"
+JWT_SECRET = "mi-clave-super-secreta"
+```
+
+dentro del código.
+
+Utiliza variables de entorno.
+
+Ejemplo:
+
+```text
+.env
+```
+
+```env
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+```
+
+Y asegúrate de que:
+
+```text
+.env
+```
+
+esté excluido del repositorio Git.
+
+Normalmente se proporciona:
+
+```text
+.env.example
+```
+
+sin secretos reales.
+
+---
+
+# 22. Autenticación
+
+Uno de los siguientes pasos importantes es construir:
+
+```text
+POST /register
+POST /login
+GET /me
+```
+
+Proceso:
+
+```text
+Usuario
+   │
+   │ email + password
+   ▼
+POST /login
+   │
+   ▼
+API comprueba contraseña
+   │
+   ▼
+genera token
+   │
+   ▼
+Cliente guarda token
+```
+
+Posteriormente:
+
+```http
+Authorization: Bearer TOKEN
+```
+
+Una tecnología frecuente es:
+
+```text
+OAuth2 + JWT
+```
+
+Pero JWT no sustituye toda la seguridad de autenticación.
+
+También necesitas pensar en:
+
+```text
+expiración
+revocación
+refresh tokens
+permisos
+roles
+HTTPS
+protección de secretos
+hash de passwords
+```
+
+Las contraseñas **nunca deberían almacenarse en texto plano**.
+
+---
+
+# 23. Autenticación vs autorización
+
+Son conceptos distintos.
+
+### Autenticación
+
+Responde:
+
+> ¿Quién eres?
+
+Ejemplo:
+
+```text
+usuario = manuel
+```
+
+### Autorización
+
+Responde:
+
+> ¿Qué puedes hacer?
+
+Ejemplo:
+
+```text
+Usuario normal:
+GET /productos
+
+Administrador:
+POST /productos
+DELETE /productos
+```
+
+Puedes tener:
+
+```text
+RBAC
+Role Based Access Control
+```
+
+Roles:
+
+```text
+user
+editor
+admin
+superadmin
+```
+
+---
+
+# 24. Seguridad de APIs
+
+Una API profesional debe considerar seriamente la seguridad.
+
+OWASP mantiene un proyecto específico dedicado a riesgos de seguridad de APIs. Entre los riesgos de su lista se encuentran problemas de autorización por objeto, autenticación rota, consumo sin restricciones de recursos, SSRF, configuraciones incorrectas e integración insegura con APIs externas.
+
+Como mínimo deberías estudiar:
+
+```text
+Validación de entradas
+Autenticación
+Autorización
+HTTPS
+CORS
+Rate limiting
+Gestión de secretos
+SQL Injection
+NoSQL Injection
+BOLA / IDOR
+SSRF
+Logging
+Actualización de dependencias
+```
+
+Por ejemplo, que exista:
+
+```text
+GET /facturas/100
+```
+
+no significa que cualquier usuario autenticado deba poder consultar la factura `100`.
+
+Hay que comprobar:
+
+```text
+¿Esta factura pertenece realmente al usuario?
+```
+
+---
+
+# 25. CORS
+
+Supongamos:
+
+```text
+Frontend:
+https://miweb.com
+
+API:
+https://api.miweb.com
+```
+
+El navegador aplica políticas relacionadas con los orígenes.
+
+Una configuración típica en FastAPI puede utilizar `CORSMiddleware`.
+
+En desarrollo es frecuente permitir:
+
+```text
+localhost:3000
+localhost:5173
+```
+
+En producción conviene especificar exactamente los dominios permitidos.
+
+Evita convertir:
+
+```text
+permitir todo
+```
+
+en una solución automática a cualquier problema de CORS.
+
+---
+
+# 26. async y await
+
+FastAPI tiene soporte para programación asíncrona.
+
+Ejemplo:
+
+```python
+@app.get("/datos")
+async def datos():
+    ...
+```
+
+`async` es especialmente útil en operaciones de espera:
+
+```text
+consultas de red
+bases de datos asíncronas
+APIs externas
+archivos
+otros servicios
+```
+
+No significa:
+
+```text
+async = automáticamente más rápido
+```
+
+Para código CPU-intensivo:
+
+```text
+procesamiento de vídeo
+machine learning pesado
+cálculos científicos
+compresión masiva
+```
+
+pueden ser necesarias otras estrategias como procesos, workers o sistemas de tareas.
+
+---
+
+# 27. APIs externas
+
+Tu backend también puede ser cliente de otra API.
+
+Arquitectura:
+
+```text
+Frontend
+   │
+   ▼
+Tu API
+   │
+   ├──── API meteorológica
+   │
+   ├──── API de pagos
+   │
+   └──── API de correo
+```
+
+Por ejemplo:
+
+```python
+import httpx
+
+
+async def obtener_datos():
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.example.com/data"
+        )
+
+    response.raise_for_status()
+
+    return response.json()
+```
+
+En aplicaciones profesionales necesitas además:
+
+```text
+timeouts
+retries
+manejo de errores
+circuit breakers
+logging
+validación de la respuesta
+```
+
+No se debe confiar ciegamente en los datos provenientes de terceros; OWASP también identifica el consumo inseguro de APIs como un riesgo específico.
+
+---
+
+# 28. Versionar una API
+
+Cuando una API comienza a ser utilizada por otros sistemas, cambiarla puede romper esos clientes.
+
+Por eso aparecen versiones.
+
+Ejemplo:
+
+```text
+/api/v1/users
+```
+
+Más adelante:
+
+```text
+/api/v2/users
+```
+
+Una estructura razonable:
+
+```text
+/api/v1/auth
+/api/v1/users
+/api/v1/products
+/api/v1/orders
+```
+
+---
+
+# 29. Paginación
+
+No hagas:
+
+```text
+GET /usuarios
+```
+
+y devuelvas:
+
+```text
+2.000.000 usuarios
+```
+
+Utiliza paginación.
+
+Ejemplo:
+
+```text
+GET /usuarios?page=2&limit=50
+```
+
+Respuesta conceptual:
+
+```json
+{
+    "page": 2,
+    "limit": 50,
+    "total": 2314,
+    "items": []
+}
+```
+
+---
+
+# 30. Filtros y ordenamiento
+
+Una API madura podría aceptar:
+
+```text
+GET /productos
+    ?categoria=redes
+    &min_price=100
+    &max_price=500
+    &sort=-created_at
+    &page=1
+```
+
+Pero debes controlar qué campos pueden:
+
+```text
+filtrarse
+ordenarse
+consultarse
+```
+
+No construyas SQL directamente concatenando datos recibidos del usuario.
+
+---
+
+# 31. Testing
+
+En proyectos profesionales no deberías depender exclusivamente de probar manualmente Swagger.
+
+Podemos utilizar:
+
+```text
+pytest
+```
+
+pytest está diseñado para escribir desde pruebas pequeñas hasta suites funcionales complejas.
+
+Ejemplo:
+
+```python
+from fastapi.testclient import TestClient
+from main import app
+
+
+client = TestClient(app)
+
+
+def test_inicio():
+
+    response = client.get("/")
+
+    assert response.status_code == 200
+
+    assert response.json() == {
+        "mensaje": "Mi primera API"
+    }
+```
+
+Ejecutamos:
+
+```bash
+pytest
+```
+
+Un proyecto serio debería probar:
+
+```text
+Casos correctos
+Casos incorrectos
+Autenticación
+Autorización
+Validaciones
+Errores
+Base de datos
+Endpoints críticos
+```
+
+---
+
+# 32. Unit tests vs integration tests
+
+## Unit test
+
+Prueba una función aislada.
+
+```text
+calcular_total()
+```
+
+## Integration test
+
+Comprueba varias partes juntas.
+
+```text
+API
+ ↓
+service
+ ↓
+repository
+ ↓
+database
+```
+
+Una aplicación profesional normalmente necesita ambos.
+
+---
+
+# 33. Logging
+
+No deberías llenar producción con:
+
+```python
+print("algo pasó")
+```
+
+Necesitas logs.
+
+Ejemplo conceptual:
+
+```text
+INFO
+WARNING
+ERROR
+CRITICAL
+```
+
+Un log útil podría contener:
+
+```text
+timestamp
+request_id
+endpoint
+status_code
+duración
+servicio
+error
+```
+
+Pero evita registrar:
+
+```text
+contraseñas
+JWT completos
+tokens
+tarjetas
+secretos
+datos sensibles innecesarios
+```
+
+---
+
+# 34. Observabilidad
+
+En sistemas profesionales también aparecen:
+
+```text
+Logs
+Metrics
+Tracing
+Alerts
+Dashboards
+```
+
+Herramientas y estándares como:
+
+```text
+OpenTelemetry
+Prometheus
+Grafana
+Sentry
+```
+
+pueden ayudarte a descubrir:
+
+```text
+qué está fallando
+cuánto tarda
+qué endpoint es lento
+cuántos errores existen
+qué servicio causó un problema
+```
+
+---
+
+# 35. Docker
+
+Docker permite empaquetar:
+
+```text
+Aplicación
+Python
+Dependencias
+Configuración
+Runtime
+```
+
+en una imagen reproducible.
+
+La guía oficial de Docker para Python incluye específicamente contenerización de aplicaciones Python y un ejemplo con FastAPI.
+
+Un `Dockerfile` simplificado podría ser:
+
+```dockerfile
+FROM python:3.13-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+CMD ["fastapi", "run", "main.py", "--port", "8000"]
+```
+
+Después:
+
+```bash
+docker build -t mi-api .
+```
+
+Y:
+
+```bash
+docker run -p 8000:8000 mi-api
+```
+
+Docker empieza a ser especialmente interesante cuando tu proyecto tiene:
+
+```text
+API
+PostgreSQL
+Redis
+worker
+```
+
+y utilizas Docker Compose.
+
+---
+
+# 36. Migraciones
+
+Supongamos que inicialmente tienes:
+
+```text
+users
+ ├ id
+ └ email
+```
+
+Pero después necesitas:
+
+```text
+users
+ ├ id
+ ├ email
+ ├ username
+ └ created_at
+```
+
+No deberías eliminar manualmente la base de datos cada vez.
+
+Para SQLAlchemy es frecuente utilizar:
+
+```text
+Alembic
+```
+
+para mantener migraciones versionadas.
+
+Conceptualmente:
+
+```text
+Código versión 1
+Database versión 1
+
+        ↓ migration
+
+Código versión 2
+Database versión 2
+```
+
+---
+
+# 37. Redis y caché
+
+Imagina que tienes:
+
+```text
+GET /estadisticas
+```
+
+y calcularlas tarda:
+
+```text
+5 segundos
+```
+
+pero cambian únicamente cada hora.
+
+Puedes guardar temporalmente el resultado:
+
+```text
+API
+ ↓
+Redis
+ ↓
+si existe → devolver
+
+si no:
+ ↓
+Database
+ ↓
+calcular
+ ↓
+guardar en Redis
+```
+
+Redis también puede utilizarse para:
+
+```text
+caché
+rate limiting
+sesiones
+colas
+datos temporales
+```
+
+---
+
+# 38. Procesamiento en segundo plano
+
+No es buena idea mantener una petición HTTP durante 10 minutos mientras generas un informe enorme.
+
+Arquitectura:
+
+```text
+POST /reports
+      │
+      ▼
+    Queue
+      │
+      ▼
+    Worker
+      │
+      ▼
+procesamiento
+```
+
+Herramientas comunes del ecosistema Python incluyen:
+
+```text
+Celery
+RQ
+Dramatiq
+```
+
+Muchas arquitecturas modernas también utilizan Redis o RabbitMQ como intermediarios.
+
+---
+
+# 39. Diseño profesional de endpoints
+
+Evita:
+
+```text
+GET /getAllUsers
+POST /createNewUser
+POST /deleteUser
+```
+
+Prefiere recursos:
+
+```text
+GET    /users
+POST   /users
+GET    /users/{id}
+PATCH  /users/{id}
+DELETE /users/{id}
+```
+
+Igualmente:
+
+```text
+/products
+/orders
+/invoices
+/customers
+```
+
+El método HTTP ya expresa gran parte de la operación.
+
+---
+
+# 40. Ejemplo de proyecto real
+
+Un proyecto excelente para aprender podría ser:
+
+# Network Inventory API
+
+Una API para administrar infraestructura de red.
+
+Entidades:
+
+```text
+Users
+Devices
+Networks
+Interfaces
+VLANs
+Locations
+Incidents
+```
+
+Endpoints:
+
+```text
+POST /api/v1/auth/login
+
+GET    /api/v1/devices
+POST   /api/v1/devices
+GET    /api/v1/devices/{id}
+PATCH  /api/v1/devices/{id}
+DELETE /api/v1/devices/{id}
+
+GET /api/v1/devices/{id}/interfaces
+GET /api/v1/networks
+GET /api/v1/vlans
+```
+
+Un dispositivo podría ser:
+
+```json
+{
+    "id": 24,
+    "hostname": "SW-CORE-01",
+    "management_ip": "10.10.0.1",
+    "vendor": "Cisco",
+    "model": "C9300",
+    "location": "Datacenter-01",
+    "status": "online"
+}
+```
+
+Con este proyecto puedes combinar conocimientos de:
+
+```text
+Python
+APIs
+Redes
+Bases de datos
+Autenticación
+Docker
+Cloud
+```
+
+---
+
+# 41. Evolución del proyecto
+
+### Nivel 1
+
+```text
+FastAPI
+CRUD
+listas Python
+Swagger
+```
+
+### Nivel 2
+
+```text
+Pydantic
+Validaciones
+Routers
+Errores HTTP
+```
+
+### Nivel 3
+
+```text
+PostgreSQL
+SQLAlchemy
+Alembic
+```
+
+### Nivel 4
+
+```text
+Login
+JWT
+OAuth2
+Roles
+Permisos
+```
+
+### Nivel 5
+
+```text
+pytest
+tests de integración
+coverage
+```
+
+### Nivel 6
+
+```text
+Docker
+Docker Compose
+PostgreSQL
+Redis
+```
+
+### Nivel 7
+
+```text
+CI/CD
+GitHub Actions
+producción
+HTTPS
+dominio
+```
+
+### Nivel 8
+
+```text
+Logging
+Metrics
+Tracing
+Rate limiting
+Caching
+Workers
+```
+
+### Nivel 9
+
+```text
+Arquitectura limpia
+Repository pattern
+Services
+Dependency Injection
+```
+
+### Nivel 10
+
+```text
+Cloud
+Escalabilidad
+Alta disponibilidad
+Microservicios
+Observabilidad
+Seguridad avanzada
+```
+
+---
+
+# 42. Qué distingue a un desarrollador profesional de APIs
+
+No es simplemente saber escribir:
+
+```python
+@app.get("/")
+```
+
+Un desarrollador backend profesional necesita comprender cómo se relacionan:
+
+```text
+                    HTTP
+                     │
+                     ▼
+                 FastAPI
+                     │
+        ┌────────────┼────────────┐
+        ▼            ▼            ▼
+     Security     Services      Validation
+        │            │
+        │            ▼
+        │       Repositories
+        │            │
+        └────────────┼────────────
+                     ▼
+                PostgreSQL
+                     │
+             ┌───────┴───────┐
+             ▼               ▼
+           Redis           Workers
+
+                     │
+                     ▼
+                  Docker
+                     │
+                     ▼
+                   Cloud
+                     │
+                     ▼
+              Observabilidad
+```
+
+Por eso el aprendizaje de APIs debería incluir tanto programación como conceptos de sistemas.
+
+---
+
+# 43. Ruta de aprendizaje recomendada
+
+Un orden especialmente razonable sería:
+
+**1. Python**
+
+Domina:
+
+```text
+funciones
+POO
+excepciones
+módulos
+type hints
+venv
+pip
+```
+
+**2. HTTP**
+
+Comprende:
+
+```text
+request
+response
+headers
+body
+JSON
+status codes
+cookies
+tokens
+```
+
+**3. REST**
+
+Aprende:
+
+```text
+resources
+endpoints
+GET
+POST
+PUT
+PATCH
+DELETE
+```
+
+**4. FastAPI**
+
+Aprende:
+
+```text
+routes
+Pydantic
+dependency injection
+routers
+middleware
+OpenAPI
+async
+```
+
+**5. SQL**
+
+Aprende:
+
+```text
+SELECT
+INSERT
+UPDATE
+DELETE
+JOIN
+INDEX
+TRANSACTION
+```
+
+**6. PostgreSQL**
+
+Trabaja con una base de datos real.
+
+**7. SQLAlchemy**
+
+Aprende:
+
+```text
+models
+relationships
+sessions
+queries
+transactions
+```
+
+**8. Seguridad**
+
+Aprende:
+
+```text
+password hashing
+JWT
+OAuth2
+RBAC
+OWASP
+HTTPS
+CORS
+```
+
+**9. Testing**
+
+Aprende:
+
+```text
+pytest
+unit tests
+integration tests
+fixtures
+mocks
+```
+
+**10. Docker**
+
+Conteneriza:
+
+```text
+FastAPI
+PostgreSQL
+Redis
+```
+
+**11. CI/CD**
+
+Automatiza:
+
+```text
+test
+build
+deploy
+```
+
+**12. Cloud**
+
+Finalmente despliega en:
+
+```text
+Azure
+AWS
+Google Cloud
+```
+
+---
+
+# 44. Documentación recomendada
+
+## HTTP — MDN
+
+Probablemente la mejor referencia inicial para aprender HTTP.
+
+[MDN — Introducción a HTTP en español](https://developer.mozilla.org/es/docs/Web/HTTP?utm_source=chatgpt.com)
+
+Métodos:
+
+[MDN — Métodos HTTP](https://developer.mozilla.org/es/docs/Web/HTTP/Reference/Methods?utm_source=chatgpt.com)
+
+Códigos:
+
+[MDN — Códigos de estado HTTP](https://developer.mozilla.org/es/docs/Web/HTTP/Reference/Status?utm_source=chatgpt.com)
+
+---
+
+## FastAPI
+
+La documentación oficial dispone actualmente de una guía en español y está diseñada para poder estudiarse progresivamente como tutorial de referencia.
+
+[FastAPI — Documentación en español](https://fastapi.tiangolo.com/es/?utm_source=chatgpt.com)
+
+[FastAPI — Tutorial completo](https://fastapi.tiangolo.com/es/tutorial/?utm_source=chatgpt.com)
+
+---
+
+## Flask
+
+[Flask — Documentación oficial en español](https://flask.palletsprojects.com/es/stable/?utm_source=chatgpt.com)
+
+Flask resulta interesante para entender con mayor claridad muchos fundamentos tradicionales del desarrollo web Python.
+
+---
+
+## Django REST Framework
+
+[Django REST Framework — Quickstart oficial](https://www.django-rest-framework.org/tutorial/quickstart/?utm_source=chatgpt.com)
+
+---
+
+## SQLAlchemy
+
+[SQLAlchemy 2 — Documentación oficial](https://docs.sqlalchemy.org/en/20/?utm_source=chatgpt.com)
+
+[SQLAlchemy — Tutorial unificado](https://docs.sqlalchemy.org/en/20/tutorial/index.html?utm_source=chatgpt.com)
+
+La documentación actual corresponde a SQLAlchemy 2.x; por eso conviene evitar cursos extremadamente antiguos basados exclusivamente en patrones de SQLAlchemy 1.x.
+
+---
+
+## pytest
+
+[pytest — Getting Started oficial](https://docs.pytest.org/en/stable/getting-started.html?utm_source=chatgpt.com)
+
+---
+
+## Docker + Python
+
+[Docker — Guía oficial para Python](https://docs.docker.com/guides/python/?utm_source=chatgpt.com)
+
+---
+
+## Seguridad de APIs
+
+[OWASP API Security Project](https://owasp.org/projects/api-security-project/?utm_source=chatgpt.com)
+
+[OWASP API Security Top 10](https://api-security.owasp.org/editions/2023/en/0x11-t10/?utm_source=chatgpt.com)
+
+---
+
+# 45. Cursos de YouTube en español
+
+## 1. Python Backend + FastAPI — MoureDev
+
+Es un curso largo que empieza explicando backend y continúa con:
+
+```text
+FastAPI
+HTTP
+GET
+POST
+PUT
+DELETE
+routers
+OAuth2
+JWT
+MongoDB
+deploy
+```
+
+
+
+Es especialmente útil para comenzar porque explica primero qué es un backend antes de entrar completamente en FastAPI.
+
+**Importante:** la sección original de despliegue con Deta está desactualizada porque ese servicio dejó de existir; el propio material del curso lo advierte.
+
+---
+
+## 2. Curso FastAPI con Python — DesarrolloLibre
+
+Curso en español más reciente, publicado en enero de 2026.
+
+Incluye:
+
+```text
+Python
+entornos
+FastAPI
+rutas
+CRUD
+query parameters
+Pydantic
+validación
+OpenAPI
+```
+
+
+
+Resulta interesante para contrastar un curso reciente con la documentación actual de FastAPI.
+
+---
+
+## 3. Flask + API REST
+
+Si después quieres entender cómo se construyen APIs utilizando un framework más minimalista:
+
+
+
+---
+
+# 46. Orden recomendado para utilizar estos recursos
+
+No recomiendo mirar ocho horas de vídeos de forma pasiva.
+
+Utiliza esta secuencia:
+
+```text
+20% vídeo
+30% documentación
+50% programación
+```
+
+Por ejemplo:
+
+```text
+1. Ver GET y POST en el curso
+           ↓
+2. Leer esa sección en FastAPI
+           ↓
+3. Programarlo sin copiar
+           ↓
+4. Romper voluntariamente el código
+           ↓
+5. Resolver los errores
+           ↓
+6. Añadir una funcionalidad propia
+```
+
+Esa última parte es especialmente importante.
+
+Pasar de:
+
+```python
+@app.get("/")
+```
+
+a diseñar por tu cuenta:
+
+```text
+/users
+/devices
+/interfaces
+/networks
+/auth/login
+```
+
+es lo que comienza a convertir conocimiento teórico en capacidad real.
+
+---
+
+# 47. Proyecto final recomendado
+
+Para demostrar un nivel sólido de APIs Python, puedes construir:
+
+## Network Infrastructure Management API
+
+Tecnologías:
+
+```text
+Python
+FastAPI
+Pydantic
+PostgreSQL
+SQLAlchemy
+Alembic
+JWT
+pytest
+Docker
+Redis
+Git
+GitHub
+Azure
+```
+
+Características:
+
+```text
+✓ Registro
+✓ Login
+✓ JWT
+✓ Roles
+✓ CRUD de dispositivos
+✓ CRUD de redes
+✓ Interfaces
+✓ VLAN
+✓ Búsquedas
+✓ Filtros
+✓ Paginación
+✓ Logs
+✓ Tests
+✓ PostgreSQL
+✓ Migraciones
+✓ Docker
+✓ Swagger/OpenAPI
+✓ Variables de entorno
+✓ Manejo profesional de errores
+✓ Deploy en cloud
+```
+
+Arquitectura:
+
+```text
+                     Internet
+                         │
+                       HTTPS
+                         │
+                         ▼
+                   ┌───────────┐
+                   │  FastAPI  │
+                   └─────┬─────┘
+                         │
+             ┌───────────┼───────────┐
+             │           │           │
+             ▼           ▼           ▼
+           Auth       Services      Cache
+             │           │          Redis
+             │           ▼
+             │      Repository
+             │           │
+             └───────────┤
+                         ▼
+                    PostgreSQL
+```
+
+Completar un proyecto de este tipo te obliga a comprender no solamente cómo crear endpoints, sino cómo diseñar y mantener un backend completo.
+
+---
+
+# Conclusión
+
+Aprender APIs en Python no consiste solamente en aprender FastAPI.
+
+El verdadero camino es:
+
+```text
+Python
+  ↓
+HTTP
+  ↓
+REST
+  ↓
+FastAPI
+  ↓
+Pydantic
+  ↓
+SQL
+  ↓
+PostgreSQL
+  ↓
+SQLAlchemy
+  ↓
+Autenticación
+  ↓
+Seguridad
+  ↓
+Testing
+  ↓
+Docker
+  ↓
+CI/CD
+  ↓
+Cloud
+  ↓
+Observabilidad
+  ↓
+Arquitectura profesional
+```
+
+FastAPI constituye un excelente punto de entrada porque combina validación mediante tipos, desarrollo moderno de APIs y generación automática de documentación OpenAPI. Su propia documentación oficial está organizada progresivamente desde primeros pasos hasta material avanzado.
+
+El objetivo final no debería ser simplemente poder decir:
+
+> «Sé FastAPI».
+
+Sino poder recibir un requisito como:
+
+> «Necesitamos una API segura para gestionar usuarios, dispositivos y redes, conectada a PostgreSQL, documentada, probada y desplegada mediante contenedores».
+
+y saber cómo diseñar, desarrollar, probar y desplegar el sistema completo.
